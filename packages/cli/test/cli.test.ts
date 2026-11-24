@@ -4,6 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { detectCapabilities, renderReport } from "../src/doctor.js";
 import { listQueuedApprovals, writeQueuedDecision } from "@agentic-tools/security";
 
@@ -70,7 +71,7 @@ test("validate command loads a config module and prints warnings", () => {
        policy: {}
      };`
   );
-  const cliPath = new URL("../src/cli.js", import.meta.url).pathname;
+  const cliPath = fileURLToPath(new URL("../src/cli.js", import.meta.url));
   const out = execFileSync(process.execPath, [cliPath, "validate", "--config", config], {
     encoding: "utf8"
   });
@@ -79,7 +80,7 @@ test("validate command loads a config module and prints warnings", () => {
 });
 
 test("doctor command exits 0 on a supported platform", () => {
-  const cliPath = new URL("../src/cli.js", import.meta.url).pathname;
+  const cliPath = fileURLToPath(new URL("../src/cli.js", import.meta.url));
   const out = execFileSync(process.execPath, [cliPath, "doctor"], { encoding: "utf8" });
   assert.match(out, /platform report/);
 });

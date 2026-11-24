@@ -39,11 +39,16 @@ export function denyAllApprover(): Approver {
   };
 }
 
+export interface CliApproverOptions {
+  input?: { isTTY?: boolean; [key: string]: unknown };
+  output?: { write(chunk: string): boolean | void; [key: string]: unknown };
+}
+
 /**
  * Interactive CLI prompt approver. Prints the redacted preview and asks
  * for y (allow once), a (allow and remember, where policy permits) or n.
  */
-export function cliApprover(options: { input?: NodeJS.ReadStream; output?: NodeJS.WriteStream } = {}): Approver {
+export function cliApprover(options: CliApproverOptions = {}): Approver {
   return {
     name: "cli",
     // Prompting claims stdin/stdout. A transport that owns those streams
@@ -52,8 +57,8 @@ export function cliApprover(options: { input?: NodeJS.ReadStream; output?: NodeJ
     async approve(request) {
       const input = options.input ?? process.stdin;
       const output = options.output ?? process.stdout;
-      if (!input.isTTY) return null; // non-interactive: cannot present
-      const rl = createInterface({ input, output });
+      if (!("isTTY" in input) || !input.isTTY) return null; // non-interactive: cannot present
+      const rl = createInterface({ input: input as any, output: output as any });
       try {
         output.write(
           [

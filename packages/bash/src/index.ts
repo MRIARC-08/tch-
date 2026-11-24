@@ -63,6 +63,8 @@ export interface BashOptions {
   mode: "trusted-host";
   /** Named commands with a narrower (never wider) classification. */
   namedCommands?: NamedCommand[];
+  /** Default per-invocation timeout in ms when input does not specify one (default 120000). */
+  defaultTimeoutMs?: number;
   /** Per-invocation timeout ceiling in ms (default 120000). */
   maxTimeoutMs?: number;
   /** Per-stream output cap in bytes (default 65536). */
@@ -266,6 +268,7 @@ export function bash(options: BashOptions): ToolDefinition[] {
   }
   const named = options.namedCommands ?? [];
   const maxTimeoutMs = options.maxTimeoutMs ?? DEFAULT_MAX_TIMEOUT_MS;
+  const defaultTimeoutMs = options.defaultTimeoutMs ?? maxTimeoutMs;
   const maxOutputBytes = options.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES;
   const childEnv = buildChildEnv(options);
 
@@ -290,7 +293,8 @@ export function bash(options: BashOptions): ToolDefinition[] {
     classify: (input: { command: string }) => classifyShell(input.command, named),
     execute: async (input: { command: string; cwd?: string; timeoutMs?: number }, ctx) => {
       const cwd = resolveCwd(ctx.workspace, input.cwd);
-      const timeoutMs = Math.min(input.timeoutMs ?? maxTimeoutMs, maxTimeoutMs);
+      const requestedTimeout = input.timeoutMs ?? defaultTimeoutMs;
+      const timeoutMs = Math.min(requestedTimeout, maxTimeoutMs);
 
       const result = await new Promise<{
         exitCode: number | null;

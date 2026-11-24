@@ -148,6 +148,17 @@ test("timeout kills the process with a stable error", async () => {
   if (res.status === "error") assert.equal(res.error.code, "timeout");
 });
 
+test("defaultTimeoutMs applies when invocation input omits timeoutMs", async () => {
+  const root = mkdtempSync(join(tmpdir(), "at-bash-"));
+  const [tool] = bash({ mode: "trusted-host", defaultTimeoutMs: 300 });
+  assert.ok(tool);
+  const started = Date.now();
+  const res = await run(tool, { command: "sleep 30" }, ctx(root));
+  assert.ok(Date.now() - started < 5000);
+  assert.equal(res.status, "error");
+  if (res.status === "error") assert.equal(res.error.code, "timeout");
+});
+
 test("oversized output is capped with an explicit truncation marker", async () => {
   const root = mkdtempSync(join(tmpdir(), "at-bash-"));
   writeFileSync(join(root, "big.txt"), "y".repeat(200_000));
